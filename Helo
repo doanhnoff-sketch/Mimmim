@@ -1,0 +1,82 @@
+repeat task.wait() until game:IsLoaded()
+
+local Players = game:GetService("Players")
+local Lighting = game:GetService("Lighting")
+local RunService = game:GetService("RunService")
+
+local LocalPlayer = Players.LocalPlayer
+local Camera = workspace.CurrentCamera
+local Terrain = workspace:FindFirstChildOfClass("Terrain")
+
+-- ===== LIGHTING =====
+Lighting.GlobalShadows = false
+Lighting.EnvironmentDiffuseScale = 0
+Lighting.EnvironmentSpecularScale = 0
+Lighting.FogEnd = 9e9
+Lighting.Brightness = 1
+Lighting.Ambient = Color3.new(0,0,0)
+Lighting.OutdoorAmbient = Color3.new(0,0,0)
+
+for _,v in ipairs(Lighting:GetChildren()) do
+    if v:IsA("PostEffect") then
+        v.Enabled = false
+    end
+end
+
+-- ===== TERRAIN =====
+if Terrain then
+    Terrain.WaterWaveSize = 0
+    Terrain.WaterWaveSpeed = 0
+    Terrain.WaterReflectance = 0
+    Terrain.WaterTransparency = 1
+end
+
+-- ===== CAMERA (GIẢM RENDER) =====
+Camera.FieldOfView = 40
+Camera.CFrame = CFrame.new(0,500000,0)
+
+-- ===== ẨN CHARACTER =====
+local function hideChar(char)
+    for _,v in ipairs(char:GetDescendants()) do
+        if v:IsA("BasePart") then
+            v.LocalTransparencyModifier = 1
+            v.CastShadow = false
+            v.CanCollide = false
+        elseif v:IsA("ParticleEmitter")
+            or v:IsA("Trail")
+            or v:IsA("Beam") then
+            v.Enabled = false
+        end
+    end
+end
+
+-- Ẩn mình
+task.delay(2,function()
+    if LocalPlayer.Character then
+        hideChar(LocalPlayer.Character)
+    end
+end)
+
+-- Ẩn người khác
+for _,plr in ipairs(Players:GetPlayers()) do
+    if plr ~= LocalPlayer and plr.Character then
+        hideChar(plr.Character)
+    end
+end
+
+Players.PlayerAdded:Connect(function(plr)
+    if plr ~= LocalPlayer then
+        plr.CharacterAdded:Connect(function(char)
+            task.defer(function()
+                hideChar(char)
+            end)
+        end)
+    end
+end)
+
+-- ===== GIẢM UPDATE CAMERA =====
+RunService:BindToRenderStep("AFKFreeze", Enum.RenderPriority.Camera.Value + 1, function()
+    Camera.CFrame = Camera.CFrame
+end)
+
+print("ABSOLUTE ULTRA AFK ENABLED ✅")
